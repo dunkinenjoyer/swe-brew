@@ -1,0 +1,8 @@
+# build / packaging artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
