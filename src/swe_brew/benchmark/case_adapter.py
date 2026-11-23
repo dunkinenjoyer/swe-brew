@@ -59,6 +59,33 @@ def _require(d: dict, path: str, kind: type = object):
     return cur
 
 
+def _release_case(data: dict) -> SweBrewCase:
+    """Load the simple release schema (public-friendly, no enterprise record)."""
+    case_id = _require(data, "case_id", str)
+    repository = data.get("repository")
+    local_repo = (
+        Path(repository).expanduser().resolve()
+        if isinstance(repository, str) and repository else None
+    )
+    repo_short = str(data.get("repo") or (local_repo.name if local_repo else ""))
+    if not repo_short:
+        raise CaseSchemaError(f"{case_id}: provide 'repository' (path) or 'repo' (name)")
+    return SweBrewCase(
+        case_id=case_id,
+        repo_short=repo_short,
+        mr_id=str(data.get("mr_id") or ""),
+        prd_text=_require(data, "problem_statement", str),
+        gold_patch=_require(data, "gold_patch", str),
+        changed_files=list(data.get("changed_files") or []),
+        setup_cmds=list(data.get("setup_commands") or []),
+        test_cmds=list(data.get("test_commands") or []),
+        avoid_commands=list(data.get("avoid_commands") or []),
+        base_commit=data.get("base_commit"),
+        local_repo=local_repo,
+        head_commit=data.get("head_commit"),
+    )
+
+
 def load_case(case_json_path: Path) -> SweBrewCase:
     """Load a single ``case.json`` into a ``SweBrewCase``.
 
@@ -67,6 +94,10 @@ def load_case(case_json_path: Path) -> SweBrewCase:
     if not case_json_path.exists():
         raise FileNotFoundError(f"case.json not found at {case_json_path}")
     data = json.loads(case_json_path.read_text(encoding="utf-8"))
+
+    # Simple release schema (public-friendly) takes precedence when present.
+    if "problem_statement" in data:
+        return _release_case(data)
 
     case_id: str = _require(data, "case_id", str)
 

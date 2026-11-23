@@ -78,8 +78,17 @@ def _local_clone_roots() -> tuple[Path, ...]:
     return (Path.home() / "swe-brew-clones",)
 
 
-def local_clone_path(repo_short: str) -> Path:
-    """Return the local clone path for ``repo_short`` or raise."""
+def local_clone_path(repo_short: str, explicit_path: Path | None = None) -> Path:
+    """Return the local clone path for ``repo_short`` or raise.
+
+    ``explicit_path`` (from the simple release schema's ``repository`` field)
+    wins over the configured clone roots when provided.
+    """
+    if explicit_path is not None:
+        candidate = Path(explicit_path).expanduser().resolve()
+        if (candidate / ".git").is_dir():
+            return candidate
+        raise SnapshotError(f"explicit repository path has no .git: {candidate}")
     for root in _local_clone_roots():
         candidate = (root / repo_short).resolve()
         if (candidate / ".git").is_dir():
@@ -141,9 +150,12 @@ def create_snapshot(
     -------
     A ``Snapshot`` dataclass — pass this to ``container.build_image``.
     """
-    clone = local_clone_path(case.repo_short)
+    clone = local_clone_path(case.repo_short, getattr(case, "local_repo", None))
     if base_commit is None:
-        commit, method = resolve_base_commit(case)
+        if case.base_commit:
+            commit, method = case.base_commit, "explicit"
+        else:
+            commit, method = resolve_base_commit(case)
     else:
         commit, method = base_commit, "override"
 

@@ -72,7 +72,7 @@ class SweBrewCase(BaseModel):
 
     case_id: str = Field(..., description="Used verbatim as SWE-bench-Live's instance_id")
     repo_short: str = Field(..., description="Short repo name from L1_code_diff_raw.patches[0].repo")
-    mr_id: str = Field(..., description="Merge-request number for base_commit recovery")
+    mr_id: str = Field(default="", description="Merge-request number for base_commit recovery (legacy records only)")
     prd_text: str = Field(..., description="L4_prd_original.description — the human problem statement (evaluation-only)")
     gold_patch: str = Field(..., description="L1_code_diff_raw.patches[0].patch — the full gold diff (unified format)")
     changed_files: list[str] = Field(default_factory=list, description="Enumerated changed paths from patches[0].changed_files")
@@ -83,6 +83,8 @@ class SweBrewCase(BaseModel):
     # Recovered / derived (optional, filled in by later stages)
     base_commit: str | None = Field(default=None, description="Real base commit SHA, once recovered")
     remote_url: str | None = Field(default=None, description="Full clone URL for the repo (the configured Git host)")
+    local_repo: "Path | None" = Field(default=None, description="Explicit local Git clone path (simple release schema)")
+    head_commit: str | None = Field(default=None, description="Post-change commit SHA (simple release schema)")
 
     @computed_field
     @property

@@ -191,7 +191,7 @@ def enhance(
     # ── input ──────────────────────────────────────────────────────────────
     case = load_case_from_dir(case_dir)
     scope_split = split_gold_patch(case.gold_patch)
-    clone = local_clone_path(case.repo_short)
+    clone = local_clone_path(case.repo_short, getattr(case, 'local_repo', None))
     console.rule("[bold]resolve")
     dual = _bc.resolve_dual(case, clone, test_files=scope_split.test_files)
     console.print(

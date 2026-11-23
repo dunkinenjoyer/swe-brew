@@ -480,6 +480,15 @@ def resolve_dual(
 
     Raises ``ResolverError`` iff every strategy fails.
     """
+    # Explicit short-circuit: the simple release schema carries both SHAs.
+    if getattr(case, "base_commit", None) and getattr(case, "head_commit", None):
+        return DualResolution(
+            base_commit=case.base_commit,
+            head_commit=case.head_commit,
+            method="explicit",
+            is_precise=True,
+        )
+
     mapping = load_sidecar(sidecar)
     entry = mapping.get(case.case_id)
 
